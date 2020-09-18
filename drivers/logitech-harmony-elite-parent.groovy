@@ -78,6 +78,7 @@ metadata {
         command "okPress", [[name:"DeviceID", type: "STRING", description: "Harmony Hub Device ID", constraints: ["STRING"]]]
         
         attribute "Activity","String"
+		attribute "numberOfButtons", "number"
     }
 }
 
