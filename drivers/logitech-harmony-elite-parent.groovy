@@ -43,10 +43,12 @@
  *    2020-03-01  Rebecca Ellenby Added Left, Right, Up, Down, and Ok custom commands.
  *    2020-07-10  Dan Ogorchock  Fixed minor bug in setLevel() command
  *    2020-09-18  abuttino       Added Home Control Buttons for Harmony Elite/950
+ *    2020-09-18  Dan Ogorchock   Minor code cleanup
+ *    2020-09-20  Dan Ogorchock   Use pushed and held events for Home Control Buttons.
  *
  */
 
-def version() {"v0.1.20200710"}
+def version() {"v0.1.20200920"}
 
 import hubitat.helper.InterfaceUtils
 
@@ -55,7 +57,8 @@ metadata {
         capability "Initialize"
         capability "Refresh"
         capability "Switch Level"
-        capability "PushableButton"
+        capability "Pushable Button"
+        capability "Holdable Button"
         capability "Audio Volume"
         capability "Actuator"
         capability "Switch"
@@ -78,6 +81,10 @@ metadata {
         command "okPress", [[name:"DeviceID", type: "STRING", description: "Harmony Hub Device ID", constraints: ["STRING"]]]
         
         attribute "Activity","String"
+        attribute "bulb1Level","Integer"
+        attribute "bulb2Level","Integer"
+        attribute "socket1Level","Integer"
+        attribute "socket2Level","Integer"
     }
 }
 
@@ -85,21 +92,21 @@ preferences {
     input("ip", "text", title: "Harmony Hub", description: "IP Address (in form of 192.168.1.45)", required: true)
     input name: "VolumeRepeat", type: "number", title: "Volume Control", description: "Increase/Decrease by this number of 'presses'",required: true, defaultValue: "1", range: "1..100"
     input("deviceName", "enum", title: "Default Activity:", description: "used for parent device's switch capability", multiple: false, required: false, options: getActivities())
-    input("hcBulbOne", "text", title: "Home Control Light 1", description: "Enable Debug Logging and get Device IDs for each button", required: false)
-    input("hcBulbTwo", "text", title: "Home Control Light 2", description: "Enable Debug Logging and get Device IDs for each button", required: false)
-    input("hcSocketOne", "text", title: "Home Control Socket 1", description: "Enable Debug Logging and get Device IDs for each button", required: false)
-    input("hcSocketTwo", "text", title: "Home Control Socket 2", description: "Enable Debug Logging and get Device IDs for each button", required: false)
+    input("hcBulbOne", "text", title: "Home Control Light 1", description: "Enable Debug Logging and get Device ID for this button", required: false)
+    input("hcBulbTwo", "text", title: "Home Control Light 2", description: "Enable Debug Logging and get Device ID for this button", required: false)
+    input("hcSocketOne", "text", title: "Home Control Socket 1", description: "Enable Debug Logging and get Device ID for this button", required: false)
+    input("hcSocketTwo", "text", title: "Home Control Socket 2", description: "Enable Debug Logging and get Device ID for this button", required: false)
     input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true   
 }
 
 
 def parse(String description) {
-    //log.debug "parsed: $description"
+    if (logEnable) log.debug "parsed: $description"
     //state.description = []
     def json = null;
     try{
         json = new groovy.json.JsonSlurper().parseText(description)
-        // log.debug "${json}"
+        if (logEnable) log.debug "${json}"
         if(json == null){
             log.warn "String description not parsed"
             return
@@ -191,56 +198,86 @@ def parse(String description) {
         }
     }
     
+    else if ((json?.type == "automation.state?notify")  && (description.contains('"status":1'))) {
+        // AJB Added On/Off Functions for Home Control Buttons to generate pushed and held events
+        if (hcBulbOne) {
+            
+            if (description.contains(hcBulbOne)) {
+                def tempbrightness = json?.data[hcBulbOne].brightness
+                tempbrightness = Math.round(tempbrightness/254*100/10)*10
+                log.debug "Bulb 1 Changed to $tempbrightness"
+                sendEvent(name:"bulb1Level", value: tempbrightness, descriptionText: "Light 1 Dimmer Level changed", isStateChange: true)
+            }
+            
+		    if ((description.contains(hcBulbOne)) && (description.contains('"on":true'))) {
+			    if (logEnable) log.debug "Bulb Button 1 was 'pushed'"
+			    sendEvent(name:"pushed", value: 1, descriptionText: "Bulb Button 1 was pushed", isStateChange: true)
+	        }   
+		    if ((description.contains(hcBulbOne)) && (description.contains('"on":false'))) {
+			    if (logEnable) log.debug "Bulb Button 1 was 'held'"
+			    sendEvent(name:"held", value: 1, descriptionText: "Light Button 1 was held", isStateChange: true)
+	        }
+        }
+        if (hcBulbTwo) {
+            
+            if (description.contains(hcBulbTwo)) {
+                def tempbrightness = json?.data[hcBulbTwo].brightness
+                tempbrightness = Math.round(tempbrightness/254*100/10)*10
+                log.debug "Bulb 2 Changed to $tempbrightness"
+                sendEvent(name:"bulb2Level", value: tempbrightness, descriptionText: "Light 2 Dimmer Level Changed", isStateChange: true)
+            }
+		    if ((description.contains(hcBulbTwo)) && (description.contains('"on":true'))) {
+			    if (logEnable) log.debug "Bulb Button 2 was 'pushed'"
+			    sendEvent(name:"pushed", value: 2, descriptionText: "Bulb Button 2 was pushed", isStateChange: true)
+	        }
+		    if ((description.contains(hcBulbTwo)) && (description.contains('"on":false'))) {
+			    if (logEnable) log.debug "Bulb Button 2 was 'held'"
+			    sendEvent(name:"held", value: 2, descriptionText: "Bulb Button 2 was held", isStateChange: true)
+	        }   
+        }   
+	    if (hcSocketOne) {
+            
+            if (description.contains(hcSocketOne)) {
+                def tempbrightness = json?.data[hcSocketOne].brightness
+                tempbrightness = Math.round(tempbrightness/254*100/10)*10
+                log.debug "Socket 1 Changed to $tempbrightness"
+                sendEvent(name:"socket1Level", value: tempbrightness, descriptionText: "Socket 1 Dimmer Level changed", isStateChange: true)
+            }            
+		    if ((description.contains(hcSocketOne)) && (description.contains('"on":true'))) {
+			    if (logEnable) log.debug "Socket Button 1 was 'pushed'"
+			    sendEvent(name:"pushed", value: 3, descriptionText: "Socket Button 1 was pushed", isStateChange: true)
+		    }
+		    if ((description.contains(hcSocketOne)) && (description.contains('"on":false'))) {
+			    if (logEnable) log.debug "Socket Button 1 was 'held'"
+			    sendEvent(name:"held", value: 3, descriptionText: "Socket Button 1 was held", isStateChange: true)
+		    }
+	    }
+	    if (hcSocketTwo) {
+            
+            if (description.contains(hcSocketTwo)) {
+                def tempbrightness = json?.data[hcSocketTwo].brightness
+                tempbrightness = Math.round(tempbrightness/254*100/10)*10
+                log.debug "Socket 2 Changed to $tempbrightness"
+                sendEvent(name:"socket2Level", value: tempbrightness, descriptionText: "Socket Button 2 Dimmer Level changed", isStateChange: true)
+            }  
+            
+		    if ((description.contains(hcSocketTwo)) && (description.contains('"on":true'))) {
+			    if (logEnable) log.debug "Socket Button 2 was 'pushed'"
+			    sendEvent(name:"pushed", value: 4, descriptionText: "Socket Button 2 was pushed", isStateChange: true)
+		    }
+		    if ((description.contains(hcSocketTwo) && (description.contains('"on":false')))) {
+			    if (logEnable) log.debug "Socket Button 2 was 'held'"
+			    sendEvent(name:"held", value: 4, descriptionText: "Socket Button 2 was held", isStateChange: true)
+		    }
+	    }
+    }
     else {
         if ((json?.cmd != "harmony.engine?startActivity") && (json?.cmd != "harmony.activityengine?runactivity")) {
             if (logEnable) log.info "Unhandled data from Harmony Hub. json = ${description}"
         }
     }
-// AJB Added On/Off Functions with any-type of identifier
-	if (hcBulbOne)
-		if ((description.contains(hcBulbOne)) && (description.contains('"on":true'))) {
-			log.info "Bulb Button 1 was pressed on"
-			sendEvent(name:"pushed", value: 1, descriptionText: "Bulb Button 1 was pressed", isStateChange: true)
-	}   
-	if (hcBulbTwo)
-		if ((description.contains(hcBulbTwo)) && (description.contains('"on":true'))) {
-			log.info "Bulb Button 2 was pressed on"
-			sendEvent(name:"pushed", value: 2, descriptionText: "Bulb Button 2 was pressed", isStateChange: true)
-	}
-	if (hcSocketOne) {
-		if ((description.contains(hcSocketOne)) && (description.contains('"on":true'))) {
-			log.info "Socket Button 1 was pressed on"
-			sendEvent(name:"pushed", value: 3, descriptionText: "Socket Button 1 was pressed", isStateChange: true)
-		}
-	}
-	if (hcSocketTwo) {
-		if ((description.contains(hcSocketTwo)) && (description.contains('"on":true'))) {
-			log.info "Socket Button 2 was pressed on"
-			sendEvent(name:"pushed", value: 4, descriptionText: "Socket Button 2 was pressed", isStateChange: true)
-		}
-	}
-	if (hcBulbOne)
-		if ((description.contains(hcBulbOne)) && (description.contains('"on":false'))) {
-			log.info "Bulb Button 1 was pressed off"
-			sendEvent(name:"pushed", value: 5, descriptionText: "Bulb Button 1 was pressed", isStateChange: true)
-	}
-	if (hcBulbTwo)
-		if ((description.contains(hcBulbTwo)) && (description.contains('"on":false'))) {
-			log.info "Bulb Button 2 was pressed off"
-			sendEvent(name:"pushed", value: 6, descriptionText: "Bulb Button 2 was pressed", isStateChange: true)
-	}   
-	if (hcSocketOne) {
-		if ((description.contains(hcSocketOne)) && (description.contains('"on":false'))) {
-			log.info "Socket Button 1 was pressed off"
-			sendEvent(name:"pushed", value: 7, descriptionText: "Socket Button 1 was pressed", isStateChange: true)
-		}
-	}
-	if (hcSocketTwo) {
-		if ((description.contains(hcSocketTwo) && (description.contains('"on":false')))) {
-			log.info "Socket Button 2 was pressed off"
-			sendEvent(name:"pushed", value: 8, descriptionText: "Socket Button 2 was pressed", isStateChange: true)
-		}
-	}
+
+
 }
 
 
@@ -292,6 +329,7 @@ def refresh() {
 
 def installed() {
     log.info "installed() called"
+    sendEvent(name: "numberOfButtons", value: 0)
     updated()
 }
 
@@ -301,7 +339,15 @@ def updated() {
     unschedule()
     
     //Create a 30 minute timer for debug logging
-    if (logEnable) runIn(1800,logsOff)
+    // if (logEnable) runIn(1800,logsOff)
+    
+    //initialize the numberOfButtons attributes based on whether or not the user has enabled this feature in the preferences
+    if ((hcBulbOne) || (hcBulbTwo) || (hcSocketOne) || (hcSocketTwo)) {
+        sendEvent(name: "numberOfButtons", value: 4)
+    } 
+    else {
+        sendEvent(name: "numberOfButtons", value: 0)
+    }
     
     //Connect the webSocket
     initialize()
@@ -324,7 +370,7 @@ def initialize() {
         log.warn "Harmony Hub IP Address not configured yet"
         return
     }
-    sendEvent(name: "numberOfButtons", value: 8, displayed: true)
+    
     if (state.remoteId == null) {
         httpPost(uri: "http://${ip}:8088",
                  path: '/',
