@@ -33,6 +33,7 @@
  *    2021-03-02  Jason A. Diegmueller  Fixed logging text issue in setBrightness (logged "setIntensity" vs "setBrightness")
  *    2021-03-02  Jason A. Diegmueller  Doubled value passed to setBrightness, Sync Box was halving the value passed
  *    2023_01-19  Tino                  Added ability to use 2 Entertainment Areas. 
+ *.   2023_01-19  Tino                  Changed variable names and added attribute for group
  */
 
 metadata {
@@ -50,7 +51,7 @@ metadata {
         command "reboot"
         command "registerHueSyncBox"
         command "setBrightness", ["brightness"] 
-        command "setPreset", [[name:"Set Entertainment Area by UUID set below", type: "ENUM", description: "Set Preset", constraints: ["favPresetOne", "favPresetTwo"] ] ]
+        command "sethueTarget", [[name:"Use Entertainment Area by UUID set below", type: "ENUM", description: "Set Entertainment Area", constraints: ["favGroupOne", "favGroupTwo"] ] ]
 
         attribute "brightness", "number"
         attribute "mode", "string"
@@ -61,12 +62,13 @@ metadata {
         attribute "updateAvailable", "string"
         attribute "intensity", "string"
         attribute "hueTarget", "string"
+        attribute "groups", "string"
     }
     preferences {
         input ( name: "ip", type: "text", title: "HUE Sync Box IP Address", description: "IP Address in form 192.168.1.226", required: true, displayDuringSetup: true )
         input ( name: "api_key", type: "text", title: "API Key", required: false, displayDuringSetup: true )
-        input ( name: "favPresetOne", type: "text", title: "Your First Favorite Preset UUID", required: false, displayDuringSetup: true )
-        input ( name: "favPresetTwo", type: "text", title: "Your Second Favorite Preset UUID", required: false, displayDuringSetup: true )
+        input ( name: "favGroupOne", type: "text", title: "Your First Favorite Entertainment Area UUID", required: false, displayDuringSetup: true )
+        input ( name: "favGroupTwo", type: "text", title: "Your Second Favorite Entertainment Area UUID", required: false, displayDuringSetup: true )
         input ( name: 'pollInterval', type: 'enum', title: 'Update interval (in seconds)', options: ['10', '30', '60', '300'], required: true, displayDuringSetup: true, defaultValue: "60" )
         input ( name: 'onActionMode', type: 'enum', title: 'Mode to activate when turned "on"', options: ['passthrough', 'video', 'game', 'music'], required: true, displayDuringSetup: true, defaultValue: "video" )
         input ( name: 'offActionMode', type: 'enum', title: 'Mode to activate when turned "off"', options: ['passthrough', 'powersave'], required: true, displayDuringSetup: true, defaultValue: "passthrough" )
@@ -261,7 +263,9 @@ def refresh() {
         if (data?.execution?.brightness)
             valueChangeEvent("brightness", data?.execution?.brightness, "")
         if (data?.execution?.hueTarget)
-            valueChangeEvent("hueTarget ", data?.execution?.hueTarget, "")
+            valueChangeEvent("hueTarget", data?.execution?.hueTarget, "")
+        if (data?.hue?.groups)
+            valueChangeEvent("groups", data?.hue?.groups, "")
         if (data?.execution?.mode)
             valueChangeEvent("mode", data?.execution?.mode, "")
         if (data?.execution?.hdmiSource)
@@ -391,18 +395,18 @@ def setBrightness(brightness)
     } 
 }
 
-def setPreset(selPreset)
+def sethueTarget(selTarget)
 {
 
-    logger("Receive \"hueTarget(\"${selPreset}\")\" command", "info")
+    logger("Receive \"hueTarget(\"${selTarget}\")\" command", "info")
     log.debug selPreset
     try{
-        if (selPreset == "favPresetOne")
-             sendAsyncHttpPut("/execution", "{\"hueTarget\": \"${settings.favPresetOne}\"}")
-             valueChangeEvent("hueTarget", settings.favPresetOne, "")
-        if (selPreset == "favPresetTwo")
-             sendAsyncHttpPut("/execution", "{\"hueTarget\": \"${settings.favPresetTwo}\"}")
-             valueChangeEvent("hueTarget", settings.favPresetTwo, "")        
+        if (selTarget == "favGroupOne")
+             sendAsyncHttpPut("/execution", "{\"hueTarget\": \"${settings.favGroupOne}\"}")
+             valueChangeEvent("hueTarget", settings.favGroupOne, "")
+        if (selTarget == "favGroupTwo")
+             sendAsyncHttpPut("/execution", "{\"hueTarget\": \"${settings.favGroupTwo}\"}")
+             valueChangeEvent("hueTarget", settings.favGroupTwo, "")        
     } catch (Exception e){
         logger("setPreset() exception ${e}", "error")    
     } 
