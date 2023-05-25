@@ -484,7 +484,7 @@ def updated(){
     setupInputs();
 }
 
-def initialized(){
+def initialize(){
     log.debug("Initialized"); 
     updated();
 }
