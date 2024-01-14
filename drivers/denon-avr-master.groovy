@@ -11,6 +11,7 @@ metadata {
     definition(name: NAME, namespace: NAME_SPACE, author: "Thomas Howard") {        
         capability "Refresh"
 		capability "Actuator"
+        capability "Initialize"
           
         deviceSetup(TYPE); 
         if (device) {
@@ -192,6 +193,9 @@ def getDeviceCommands(){
         dolby_digital:[command: "DOLBY DIGITAL", name: "Dolby Digital",        val: false, delay: 1],
         dts_surround: [command: "DTS SUROUND",   name: "DTS Surround Sound",   val: false, delay: 1],
         mch_stero:    [command: "MCH STEREO",    name: "Multi-Channel Stereo", val: false, delay: 1],
+	    dolby_Surround:[command: "DOLBY SURROUND", name: "Dolby Surround",     val: false, delay: 1],
+	    dolby_Atmos:  [command: "DOLBY ATMOS",   name: "Dolby Atmos",          val: false, delay: 1],
+	    neural_x:     [command: "M CH IN+NEURAL:X", name: "NEURAL-X",          val: false, delay: 1],
     ]; 
     
     command_dynamicvolume = [
@@ -485,6 +489,7 @@ def updated(){
 }
 
 def initialize(){
+    disconnect();
     log.debug("Initialized"); 
     updated();
 }
@@ -500,12 +505,15 @@ def close() {
 }
 
 def connect(ip, port) {
-	telnetConnect([termChars:[13]], ip, port.toInteger(), null, null)	
+	telnetConnect([termChars:[13]], ip, port.toInteger(), null, null);	
 }
 
 
 def disconnect() {
-	telnetClose()
+	telnetClose();
+
+
+
 }
 
 //commands
@@ -517,9 +525,9 @@ def executeCommand(command) {
 
 def refresh(){
     
-	deviceCommands = getDeviceCommands();
+	deviceCommands = getDeviceCommands()
     
-    devName = device.getDataValue("type");
+    devName = device.getDataValue("type")
     
     //Setup the Class Methods
     deviceCommands."${devName}".each{ func, choices -> 
