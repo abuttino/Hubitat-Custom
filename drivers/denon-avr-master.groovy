@@ -124,7 +124,7 @@ def getDeviceCommands(){
         auto:     [command: "AUTO",     name: "Auto",     val: false, delay: 1],
         low:      [command: "LOW",      name: "Low",      val: false, delay: 1],
         mid:      [command: "MID",      name: "Mid",      val: false, delay: 1],
-        high:     [command: "HIGH",     name: "High",     val: false, delay: 1],
+        high:     [command: "HI",     name: "High",     val: false, delay: 1],
         off:      [command: "OFF",      name: "Off",      val: false, delay: 1],
     ];
     
@@ -195,7 +195,14 @@ def getDeviceCommands(){
         mch_stero:    [command: "MCH STEREO",    name: "Multi-Channel Stereo", val: false, delay: 1],
 	    dolby_Surround:[command: "DOLBY SURROUND", name: "Dolby Surround",     val: false, delay: 1],
 	    dolby_Atmos:  [command: "DOLBY ATMOS",   name: "Dolby Atmos",          val: false, delay: 1],
-	    neural_x:     [command: "M CH IN+NEURAL:X", name: "NEURAL-X",          val: false, delay: 1],
+	    mCh:          [command: "MULTI CH IN",   name: "Multi-Ch",             val: false, delay: 1],
+	    neural_x:     [command: "M CH IN\\+NEURAL\\:X", name: "Multi-Ch+X",    val: false, delay: 1],
+	    mCh_DS:       [command: "M CH IN\\+DS",    name: "Multi-Ch+Dolby",     val: false, delay: 1],
+	    virtual_S:    [command: "VIRTUAL",         name: "Virtual Surround",   val: false, delay: 1],
+	    dts_px:       [command: "DTS HD\\+NEURAL\\:X", name: "DTS-HD+X",       val: false, delay: 1],
+	    dts_dolby:    [command: "DTS HD\\+DS",         name: "DTS-HD+Dolby",   val: false, delay: 1],
+	    dts_hd_ma:    [command: "DTS HD MSTR",         name: "DTS-HD Master",  val: false, delay: 1],
+	    dts_hd_ma:    [command: "AURO3D",         name: "Auro-3D",  val: false, delay: 1],
     ]; 
     
     command_dynamicvolume = [
