@@ -127,6 +127,13 @@ def getDeviceCommands(){
         high:     [command: "HI",     name: "High",     val: false, delay: 1],
         off:      [command: "OFF",      name: "Off",      val: false, delay: 1],
     ];
+	
+    command_dim_level = [
+        bright:     [command: "BRI",     name: "Bright",     val: false, delay: 1],
+        dim:      [command: "DIM",      name: "Dim",      val: false, delay: 1],
+        dark:      [command: "DAR",      name: "Dark",      val: false, delay: 1],
+        off_d:     [command: "OFF",     name: "Off",     val: false, delay: 1],
+    ];
     
     command_on_standby = [ 
         on:     [command: "ON",      name: "On",      val: false, delay: 10, capability: "Switch", capability_func: "on", capability_value: "on"],
@@ -191,18 +198,23 @@ def getDeviceCommands(){
         stereo:       [command: "STEREO",        name: "Stereo",               val: false, delay: 1],
         standard:     [command: "STANDARD",      name: "Standard",             val: false, delay: 1],
         dolby_digital:[command: "DOLBY DIGITAL", name: "Dolby Digital",        val: false, delay: 1],
+        dolby_plus:[command: "DOLBY AUDIO\\-DD\\+ \\+DSUR", name: "Dolby Digital+ DSur", val: false, delay: 1],
+        dolby_nerual:[command: "DOLBY AUDIO\\-DD\\+ \\+NERUAL\\:X", name: "Dolby Digital+ NX", val: false, delay: 1],
         dts_surround: [command: "DTS SUROUND",   name: "DTS Surround Sound",   val: false, delay: 1],
+        dts_neuralx: [command: "NEURAL\\:X",   name: "DTS Neural:X",           val: false, delay: 1],
         mch_stero:    [command: "MCH STEREO",    name: "Multi-Channel Stereo", val: false, delay: 1],
-	    dolby_Surround:[command: "DOLBY SURROUND", name: "Dolby Surround",     val: false, delay: 1],
+	    dolby_Surround: [command: "DOLBY SURROUND", name: "Dolby Surround",    val: false, delay: 1],
+	    dolby_Surround2: [command: "DOLBY AUDIO-DSUR", name: "Dolby Surround", val: false, delay: 1],
 	    dolby_Atmos:  [command: "DOLBY ATMOS",   name: "Dolby Atmos",          val: false, delay: 1],
 	    mCh:          [command: "MULTI CH IN",   name: "Multi-Ch",             val: false, delay: 1],
 	    neural_x:     [command: "M CH IN\\+NEURAL\\:X", name: "Multi-Ch+X",    val: false, delay: 1],
-	    mCh_DS:       [command: "M CH IN\\+DS",    name: "Multi-Ch+Dolby",     val: false, delay: 1],
-	    virtual_S:    [command: "VIRTUAL",         name: "Virtual Surround",   val: false, delay: 1],
+	    mCh_DS:       [command: "M CH IN\\+DS",   name: "Multi-Ch+Dolby",      val: false, delay: 1],
+	    virtual_S:    [command: "VIRTUAL",        name: "Virtual Surround",    val: false, delay: 1],
 	    dts_px:       [command: "DTS HD\\+NEURAL\\:X", name: "DTS-HD+X",       val: false, delay: 1],
-	    dts_dolby:    [command: "DTS HD\\+DS",         name: "DTS-HD+Dolby",   val: false, delay: 1],
-	    dts_hd_ma:    [command: "DTS HD MSTR",         name: "DTS-HD Master",  val: false, delay: 1],
-	    dts_hd_ma:    [command: "AURO3D",         name: "Auro-3D",  val: false, delay: 1],
+	    dts_dolby:    [command: "DTS HD\\+DS",    name: "DTS-HD+Dolby",        val: false, delay: 1],
+	    dts_hd_ma:    [command: "DTS HD MSTR",    name: "DTS-HD Master",       val: false, delay: 1],
+	    aurothree:    [command: "AURO3D",         name: "Auro-3D",             val: false, delay: 1],
+	    aurotwo:      [command: "AURO2DSURR",     name: "Auro-2D Surround",    val: false, delay: 1],
     ]; 
     
     command_dynamicvolume = [
@@ -217,6 +229,11 @@ def getDeviceCommands(){
         flat:         [command: "FLAT",             name: "Flat",                       val: false, delay: 1],
         manual:       [command: "MANUAL",           name: "Manual",                     val: false, delay: 1],
         off:          [command: "OFF",              name: "Off",                        val: false, delay: 1],
+    ];
+
+    command_eco =     [
+        on:     [command: "ON",      name: "On",       val: false, delay: 1, capability: "Switch", capability_func: "on", capability_value: "on"],
+        off:    [command: "OFF",     name: "Off",      val: false, delay: 1, capability: "Switch", capability_func: "off", capability_value: "off"],   
     ];
     
     command_quick = [
@@ -247,6 +264,10 @@ def getDeviceCommands(){
                 commands: command_volume,
                 capability: "AudioVolume", capability_var: "volume"
             ],
+            FrontDim: [
+                name: "Front Display Dim Level", prefix: "DIM ", status: true,
+                commands: command_dim_level,
+            ],			
             
             Mute:  [   
                 name: "Mute", prefix: "MU", status: true,
@@ -304,6 +325,12 @@ def getDeviceCommands(){
                 name: "Main Zone", prefix: "ZM", status: true,
                 commands: command_on_off
             ],
+			
+            Eco:  [   
+                name: "ECO", prefix: "ECO", status: true,
+                commands: command_eco
+				
+			],
             DynamicEqualizer: [
                name: "Dynamic Equalizer", prefix: "PSDYNEQ ", status: true,
                commands: command_on_off,
@@ -438,7 +465,10 @@ def getFunction (name, args, type) {
 def methodMissing(String name, Object args) {
     
     if (device)
-        type = device.getDataValue("type");
+        type = device.getDataValue("type")
+        //if (!function) {
+        //disconnect();
+    //};
     
     function = getFunction(name, args, type);
     if (function != null) {
@@ -449,6 +479,7 @@ def methodMissing(String name, Object args) {
         return method.invoke(this, name, args);
     }
 }
+
 
 def setupChildDevices(){
     
@@ -508,7 +539,7 @@ def init(ip, port) {
 }
 
 def close() {
-	disconnect()
+	disconnect();
 }
 
 def connect(ip, port) {
@@ -518,6 +549,7 @@ def connect(ip, port) {
 
 def disconnect() {
 	telnetClose();
+
 
 
 
