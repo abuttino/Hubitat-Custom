@@ -39,3 +39,43 @@ metadata {
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
 	}
 }
+
+def logsOff(){
+    log.warn "debug logging disabled..."
+    device.updateSetting("logEnable",[value:"false",type:"bool"])
+}
+
+def on() {
+    sendData("on")
+}
+
+def off() {
+    sendData("off")
+}
+
+def sendData(String value) {
+    def name = device.deviceNetworkId.split("-")[-1]
+    parent.sendData("${name} ${value}")  
+}
+
+def parse(String description) {
+    if (logEnable) log.debug "parse(${description}) called"
+	def parts = description.split(" ")
+    def name  = parts.length>0?parts[0].trim():null
+    def value = parts.length>1?parts[1].trim():null
+    if (name && value) {
+        // Update device
+        sendEvent(name: name, value: value)
+    }
+    else {
+    	log.error "Missing either name or value.  Cannot parse!"
+    }
+}
+
+def installed() {
+    updated()
+}
+
+def updated() {
+    if (logEnable) runIn(1800,logsOff)
+}
