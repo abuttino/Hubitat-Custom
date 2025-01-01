@@ -21,6 +21,9 @@ metadata {
     
     preferences {
 		input ("deviceIp", "text", title: "Denon AVR IP Address");
+        input(name: "connectionType", type: "enum", title: "Connection Type:", description: 
+			"This allows you to choose the connection type to execute commands on your Denon receiver. If you have had problems, use HTTP",
+			 required: false, options: ["Telnet", "HTTP"])
         getChildrenDevices(TYPE);
         getOverrides(TYPE, "Input");
     }    
@@ -204,7 +207,7 @@ def getDeviceCommands(){
         dts_neuralx: [command: "NEURAL\\:X",   name: "DTS Neural:X",           val: false, delay: 1],
         mch_stero:    [command: "MCH STEREO",    name: "Multi-Channel Stereo", val: false, delay: 1],
 	    dolby_Surround: [command: "DOLBY SURROUND", name: "Dolby Surround",    val: false, delay: 1],
-	    dolby_Surround2: [command: "DOLBY AUDIO-DSUR", name: "Dolby Surround", val: false, delay: 1],
+	    dolby_Surrounds: [command: "DOLBY AUDIO-DSUR", name: "Dolby Surround", val: false, delay: 1],
 	    dolby_Atmos:  [command: "DOLBY ATMOS",   name: "Dolby Atmos",          val: false, delay: 1],
 	    mCh:          [command: "MULTI CH IN",   name: "Multi-Ch",             val: false, delay: 1],
 	    neural_x:     [command: "M CH IN\\+NEURAL\\:X", name: "Multi-Ch+X",    val: false, delay: 1],
@@ -215,6 +218,7 @@ def getDeviceCommands(){
 	    dts_hd_ma:    [command: "DTS HD MSTR",    name: "DTS-HD Master",       val: false, delay: 1],
 	    aurothree:    [command: "AURO3D",         name: "Auro-3D",             val: false, delay: 1],
 	    aurotwo:      [command: "AURO2DSURR",     name: "Auro-2D Surround",    val: false, delay: 1],
+	    dtsx:         [command: "DTS:X MSTR",     name: "DTS:X MA",            val: false, delay: 1],
     ]; 
     
     command_dynamicvolume = [
@@ -535,7 +539,7 @@ def initialize(){
 def init(ip, port) {
 	disconnect();
     log.debug("Connecting to ${ip}@${port}");
-	connect(ip, port);
+    connect(ip, port);
 }
 
 def close() {
@@ -543,7 +547,13 @@ def close() {
 }
 
 def connect(ip, port) {
-	telnetConnect([termChars:[13]], ip, port.toInteger(), null, null);	
+    switch (connectionType) {
+        case "Telnet":
+        log.debug("Connection Type: ${connectionType}");
+        telnetConnect([termChars:[13]], ip, port.toInteger(), null, null);
+        case "HTTP":
+        log.debug("Connection Type: ${connectionType}");
+     }	
 }
 
 
